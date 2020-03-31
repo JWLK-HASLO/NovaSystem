@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29613.14
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovaSystem1.0", "NovaSystem1.0\NovaSystem1.0.csproj", "{7D67A061-D2AF-4F85-833E-E1AE28E7F91C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovaSystem", "NovaSystem\NovaSystem.csproj", "{7D67A061-D2AF-4F85-833E-E1AE28E7F91C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

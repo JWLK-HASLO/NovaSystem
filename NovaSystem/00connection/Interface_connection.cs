@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NovaSystem1._0
+namespace NovaSystem
 {
     public partial class MainForm : Form
     {
@@ -57,15 +57,7 @@ namespace NovaSystem1._0
         private void FormConnectionLoad()
         {
             /*Port Initialization*/
-            comboBox_comport.BeginUpdate();
-            foreach (string comport in SerialPort.GetPortNames())
-            {
-                comboBox_comport.Items.Add(comport);
-            }
-            comboBox_comport.EndUpdate();
-            Console.WriteLine("Save Port Value : {0}", comboBox_comport_value);
-            comboBox_comport.SelectedItem = comboBox_comport_value;
-            CheckForIllegalCrossThreadCalls = false;
+            comport_initialize();
 
             /*Layout Initialization*/
             comboBox_layout.BeginUpdate();
@@ -82,11 +74,58 @@ namespace NovaSystem1._0
 
 
         /* #1-0 Comport Setting */
+
+        private const int DBT_DEVICEARRIVAL = 0x8000;                      // 새로운 Device가 탐지 되었을때    
+        private const int DBT_DEVICEREMOVEPENDING = 0x8003;         // Device가 연결 해지 되었을 때    
+        private const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
+        protected override void WndProc(ref Message m)
+        {
+            //Console.WriteLine("WndProc");
+            switch (m.WParam.ToInt32())
+            {
+                case DBT_DEVICEARRIVAL:
+                    Console.WriteLine("Connected");
+                    comport_initialize();
+                    break;
+
+                case DBT_DEVICEREMOVECOMPLETE:
+                    Console.WriteLine("Disconnected");
+                    comport_disattatched();
+                    break;
+            }
+            base.WndProc(ref m);
+        }
+
+        private void comport_initialize()
+        {
+            comboBox_comport.BeginUpdate();
+            foreach (string comport in SerialPort.GetPortNames())
+            {
+                comboBox_comport.Items.Add(comport);
+            }
+            comboBox_comport.EndUpdate();
+            Console.WriteLine("Save Port Value : {0}", comboBox_comport_value);
+            comboBox_comport.SelectedItem = comboBox_comport.Items.Count == 1 ? "None" : comboBox_comport_value;
+            CheckForIllegalCrossThreadCalls = false;
+        }
+        private void comport_disattatched()
+        {
+            comboBox_comport.BeginUpdate();
+            comboBox_comport.Items.Add("None");
+            foreach (string comport in SerialPort.GetPortNames())
+            {
+                comboBox_comport.Items.Add(comport);
+            }
+            comboBox_comport.EndUpdate();
+            Console.WriteLine("Save Port Value : {0}", comboBox_comport_value);
+            comboBox_comport.SelectedItem = "None";
+            CheckForIllegalCrossThreadCalls = false;
+        }
         private void button_device_connect_Click(object sender, EventArgs e)
         {
             try
             {
-                if (serialPort.IsOpen == false)
+                if (serialPort.IsOpen == false && comboBox_comport.SelectedItem != null && comboBox_comport.SelectedItem.ToString() != "None")
                 {
                     /*Serial Port Setting*/
                     serialPort.PortName = comboBox_comport.SelectedItem.ToString();                     //콤보 박스에서 선택.
@@ -95,11 +134,15 @@ namespace NovaSystem1._0
                     serialPort.StopBits = StopBits.One;
                     serialPort.Parity = Parity.None;
                     serialPort.Open();
-                    
+
                     serialPort.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler); //데이터 받기.
                     dataLogBox.Text += "연결되었습니다." + Environment.NewLine;
 
                     serialPort.WriteLine("NovaSystem Connection Check\r\n");                                                    // abcd\r\n Send
+                }
+                else if (serialPort.IsOpen == false || comboBox_comport.SelectedItem == null || comboBox_comport.SelectedItem.ToString() == "None")
+                {
+                    MessageBox.Show("기기연결 포트를 선택해 주시기 바랍니다,","Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 else dataLogBox.Text += "연결되어 있습니다." + Environment.NewLine;
             }
@@ -129,8 +172,12 @@ namespace NovaSystem1._0
         }
 
         /* #1-1 Data Receive*/
-        string[] dataSaverString = new string[2];
+        string[] dataSaverString = new string[30];
         bool trigger = false;
+        bool triggerColNumber = false;
+        int dataMSB = 0;
+        int dataLSB = 0;
+        int dataSUM = 0;
         int dataCounter = 0;
         int dataPriority = 0;
         int dataColLineNumber = 0;
@@ -147,97 +194,136 @@ namespace NovaSystem1._0
                 //PortBuffer.AddRange(byteBuffer);\
                 //Console.WriteLine(byte.Join(",", byteBuffer);
 
-                /* */
-                for (int iTemp = 0; iTemp < byteBuffer.Length; iTemp++)
+                
+                if(click_loop == 1 && dataGridView_ScaleControl.Columns.Count != 0)
                 {
-                    receiveDataString = byteBuffer[iTemp].ToString("X2");
-                    //Console.WriteLine("Data[{0:00}] HEX: {1}  ", DataBufferTiming, receiveDataString);
-                    
-                    if(receiveDataString == "FC")
+                    for (int iTemp = 0; iTemp < byteBuffer.Length; iTemp++)
                     {
-                        dataSaverString[0] = receiveDataString;
-                    }
+                        receiveDataString = byteBuffer[iTemp].ToString("X2");
+                        //Console.WriteLine("HEX: {0}  ", receiveDataString);
 
-                    if(dataSaverString[0] == "FC" && receiveDataString =="FD")
-                    {
-                        //Console.WriteLine("Data Start");
-                        dataSaverString[1] = receiveDataString;
-                    }
-
-                    if(dataSaverString[1] == "FD" && receiveDataString == "50")
-                    {
-                        dataSaverString[2] = receiveDataString;
-                        trigger = true;
-                    }
-
-                    if(dataSaverString[2] == "50" && trigger == true)
-                    {
-                        if(dataCounter == 0)
+                        if (receiveDataString == "FC")
                         {
-                            //Console.WriteLine("Data Type Press");
+                            dataSaverString[0] = receiveDataString;
+                            //Console.WriteLine("HEADER00: {0}  ", receiveDataString);
                         }
-                        else if (dataCounter == 1)
+                         
+                        if (dataSaverString[0] == "FC" && receiveDataString == "FD")
                         {
-                            //Console.WriteLine("Data Column Number  : {0}", Int64.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber));
+                            //Console.WriteLine("Data Start");
+                            dataSaverString[1] = receiveDataString;
+                            //Console.WriteLine("HEADER01: {0}  ", receiveDataString);
                         }
-                        else if (dataCounter == 2)
+
+                        if (dataSaverString[1] == "FD" && receiveDataString == "50")
                         {
-                            dataRowLineNumber = Int32.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber);
-                            //Console.WriteLine("Data Row line : {0}", dataRowLineNumber);
+                            dataSaverString[2] = receiveDataString;
+                            trigger = true;
+                            //Console.WriteLine("TRIGGER ENABLE = {0}  ", receiveDataString);
+
                         }
-                        else if (dataCounter > 2 && dataCounter < (columnNumber*2+3))
+                        
+                        if (dataSaverString[2] == "50" && trigger == true)
                         {
-                            int dataInfo = Int32.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber);
-
-
-                            int dataMSB = 0;
-                            int dataLSB = 0;
-
-                            if(dataPriority % 2 == 0)
+                            
+                            if (dataCounter == 0)
                             {
-                                dataMSB = dataInfo * 256;
+                                //Console.WriteLine("Data Type Press");
                             }
-                            else if (dataPriority % 2 == 1)
+                            else if (dataCounter == 1)
                             {
-                                dataLSB = dataInfo;
+                                //Console.WriteLine("Data Column Number  : {0}", Int64.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber));
+                            }
+                            else if (dataCounter == 2)
+                            {
+                                dataRowLineNumber = Int32.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber);
+                                //Console.WriteLine("Data Row line : {0}", dataRowLineNumber);
                             }
 
-                            //Console.WriteLine("Data Info[{0:00}][{1:00}] : {2}", dataColLineNumber, dataRowLineNumber, dataInfo);
-                            //dataArrayPressString[dataColLineNumber, dataRowLineNumber] = String.Format("{0:00},{0:00},", dataColLineNumber+1, dataRowLineNumber+1);
-                            //dataArrayPressString[dataColLineNumber, dataRowLineNumber] = String.Format("{0:0000}", dataMSB + dataLSB);
-
-                            dataPriority++;
-                            if (dataPriority > columnNumber*2-1)
+                            
+                            else if (dataCounter > 2 && dataCounter < (columnNumber * 2 + 3))
                             {
-                                dataPriority = 0;
+                                int dataInfo = Int32.Parse(receiveDataString, System.Globalization.NumberStyles.HexNumber);
+
+
+                                if (dataPriority % 2 == 0)
+                                {
+                                    dataMSB = dataInfo;
+                                }
+                                else if (dataPriority % 2 == 1)
+                                {
+                                    dataLSB = dataInfo;
+                                    triggerColNumber = true;
+
+
+                                }
+
+
+                                //Console.WriteLine(String.Format("{0},{1} = {2:0000}", dataColLineNumber+1, dataRowLineNumber, dataMSB + dataLSB));
+
+                                /*
+                                //Console.WriteLine("Data Info[{0:00}][{1:00}] : {2}", dataColLineNumber, dataRowLineNumber, dataInfo);
+                                //dataArrayPressString[dataColLineNumber, dataRowLineNumber] = String.Format("{0:00},{0:00},", dataColLineNumber+1, dataRowLineNumber+1);
+                                dataArrayPressString[dataColLineNumber, dataRowLineNumber] = String.Format("{0:0000}", dataMSB + dataLSB);
+                                */
+
+
+                                if(triggerColNumber == true)
+                                {
+                                    triggerColNumber = false;
+                                    dataSUM = dataMSB * 256 + dataLSB;
+                                    if (dataSUM > 4095)
+                                    {
+                                        dataSUM = 0;
+                                    }
+                                    /*
+                                    if (dataColLineNumber < 1 && dataRowLineNumber < 1)
+                                    {
+                                        Console.WriteLine(String.Format("{0},{1} = {2:000} : {3:000},{4:000},{5:0000}", dataColLineNumber + 1, dataRowLineNumber + 1, dataInfo, dataMSB, dataLSB, dataSUM));
+                                    }
+
+                                    */
+                                        
+                                    dataArrayPressString[dataColLineNumber, dataRowLineNumber] = String.Format("{0:0000}", dataSUM);
+
+                                    dataColLineNumber++;
+                                    if (dataColLineNumber > columnNumber - 1)
+                                    {
+                                        dataColLineNumber = 0;
+                                    }
+
+                                }
+
+
+                                dataPriority++;
+                                if (dataPriority > (columnNumber * 2 - 1) )
+                                {
+                                    dataPriority = 0;
+                                }
+                                
                             }
 
-                            dataColLineNumber++;
-                            if (dataColLineNumber > columnNumber-1)
+
+                            dataCounter++;
+                            if (dataCounter > columnNumber * 2 + 2)
                             {
-                                dataColLineNumber = 0;
+                                dataCounter = 0;
+                                trigger = false;
                             }
                         }
-                        dataCounter++;
-                        if (dataCounter > 50)
+                        if (receiveDataString == "FD")
                         {
-                            dataCounter = 0;
-                            trigger = false;
+                            dataSaverString[3] = receiveDataString;
                         }
+
+                        if (dataSaverString[3] == "FD" && receiveDataString == "FE")
+                        {
+                            //Console.WriteLine("Data End");
+                        }
+                        
                     }
-
-
-                    if (receiveDataString == "FD")
-                    {
-                        dataSaverString[0] = receiveDataString;
-                    }
-
-                    if (dataSaverString[0] == "FD" && receiveDataString == "FE")
-                    {
-                        //Console.WriteLine("Data End");
-                    }
-
                 }
+
 
             }
             catch (Exception exception)
@@ -429,6 +515,7 @@ namespace NovaSystem1._0
         System.Timers.Timer timer = null;
         System.Diagnostics.Stopwatch stopWatch = new System.Diagnostics.Stopwatch();
         TimeSpan timSpan = new TimeSpan(0, 0, 0, 0);
+        String dataValueString = "";
         int click_loop = 0;
         int dataIndex = 0;
         int columnCounter = 0;
@@ -466,18 +553,23 @@ namespace NovaSystem1._0
                 }
             }
             
+
             /* Data - Array View */ /**/
             for (rowCounter = 0; rowCounter < rowNumber; rowCounter++)
             {
                 for (columnCounter = 0; columnCounter < columnNumber; columnCounter++)
                 {
                     /* SET DATA of CELL */
+                    dataValueString = dataArrayPressString[columnCounter, rowCounter];
                     dataGridView_ScaleControl[columnCounter, rowCounter].Value = String.Format("{0:0000}", dataArrayValue[columnCounter, rowCounter]);
-                    //dataGridView_ScaleControl[columnCounter, rowCounter].Value = dataArrayPressString[columnCounter, rowCounter];
-                   
+                    dataGridView_ScaleControl[columnCounter, rowCounter].Value = dataValueString;
+
                     /* SET BACKGROUND COLOR */
-                    dataGridView_ScaleControl[columnCounter, rowCounter].Style.BackColor = colorStepArrayBackGround[dataIndex];
-                    dataGridView_ScaleControl[columnCounter, rowCounter].Style.ForeColor = colorStepArrayFont[dataIndex];
+                    dataGridView_ScaleControl[columnCounter, rowCounter].Style.BackColor = colorStepArrayBackGround[Int32.Parse(dataValueString == null ? "0" : dataValueString)];
+                    dataGridView_ScaleControl[columnCounter, rowCounter].Style.ForeColor = colorStepArrayFont[Int32.Parse(dataValueString == null ? "0" : dataValueString)];
+
+                    //dataGridView_ScaleControl[columnCounter, rowCounter].Style.BackColor = colorStepArrayBackGround[dataIndex];
+                    //dataGridView_ScaleControl[columnCounter, rowCounter].Style.ForeColor = colorStepArrayFont[dataIndex];
                     /* DATA LOGGIN */
                     //DataReceviedTextBoxLogging(dataArrayString[columnCounter, rowCounter]);
 
@@ -485,14 +577,14 @@ namespace NovaSystem1._0
                 }
             }
 
-            /* Data - Array Example DataIndex */ /**/
+            /* Data - Array Example DataIndex *//*
             dataIndex++;
 
             if (dataIndex > 4095)
             {
                 dataIndex = 0;
             }
-           
+            */
         }
         private void button_record_play_Click(object sender, EventArgs e)
         {
@@ -569,6 +661,8 @@ namespace NovaSystem1._0
                     {
                         /*Data Reset*/
                         dataGridView_ScaleControl.Columns.Clear();
+                        dataArrayPressString = setLayoutValueString(columnNumber, rowNumber);
+
                         /*TImer Reset*/
                         timer.Close();
                         stopWatch.Reset();

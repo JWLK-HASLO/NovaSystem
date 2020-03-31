@@ -1,4 +1,4 @@
-﻿namespace NovaSystem1._0
+﻿namespace NovaSystem
 {
     partial class NewLayout
     {

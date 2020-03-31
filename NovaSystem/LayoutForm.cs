@@ -12,7 +12,7 @@ using System.IO;
 using System.Data.OleDb;
 using System.Globalization;
 
-namespace NovaSystem1._0
+namespace NovaSystem
 {
     public partial class LayoutForm : Form
     {

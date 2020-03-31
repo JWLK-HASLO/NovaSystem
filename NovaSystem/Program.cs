@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NovaSystem1._0
+namespace NovaSystem
 {
     static class Program
     {

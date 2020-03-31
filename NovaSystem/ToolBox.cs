@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace NovaSystem1._0
+namespace NovaSystem
 {
     public partial class MainForm : Form
     {

@@ -55,7 +55,7 @@
     <ManifestKeyFile>NovaSystem1.0_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
     <TargetZone>LocalIntranet</TargetZone>
@@ -64,7 +64,7 @@
     <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="OpenCvSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6adad1e807fea099, processorArchitecture=MSIL">
@@ -95,26 +95,29 @@
     <Reference Include="WindowsFormsIntegration" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="00connection\Interface_connection.cs">
+    <Compile Include="02EditFuction\Interface_equation.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="01record\Interface_record.cs">
+    <Compile Include="00recordview\interface_gridClickEvent.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="00recordview\Interface_getData.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="00recordview\Interface_grid.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="00recordview\Interface_connection.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="01importview\Interface_importbasic.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="LayoutForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="LayoutForm.Designer.cs">
-      <DependentUpon>LayoutForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="ToolBox.cs">
       <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NewLayout.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NewLayout.Designer.cs">
-      <DependentUpon>NewLayout.cs</DependentUpon>
     </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -124,12 +127,6 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="LayoutForm.resx">
-      <DependentUpon>LayoutForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NewLayout.resx">
-      <DependentUpon>NewLayout.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>

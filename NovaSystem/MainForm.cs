@@ -27,18 +27,21 @@ namespace NovaSystem
 
         private void tabMainControl_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (tabMainControl.SelectedTab == tabPage1_connection)
-            {
-                //MessageBox.Show("Connection PAGE");
-                dataViewBoxWrap.Visible = true;
-            }
-            else 
-            {
-                //MessageBox.Show("other PAGE");
-                dataViewBoxWrap.Visible = false;
-            }
+            //if (tabMainControl.SelectedTab == tabPage1_connection)
+            //{
+            //    //MessageBox.Show("Connection PAGE");
+            //    dataViewBoxWrap.Visible = true;
+            //}
+            //else 
+            //{
+            //    //MessageBox.Show("other PAGE");
+            //    dataViewBoxWrap.Visible = false;
+            //}
         }
 
-        
+        private void trackBar_timeline_Scroll(object sender, EventArgs e)
+        {
+            MessageBox.Show("업데이트 예정입니다.", "완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 }

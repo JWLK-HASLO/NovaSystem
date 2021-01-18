@@ -103,6 +103,8 @@ namespace NovaSystem
         private void comport_initialize()
         {
             comboBox_comport.BeginUpdate();
+            comboBox_comport.Items.Clear();
+            comboBox_comport.Items.Add("None");
             foreach (string comport in SerialPort.GetPortNames())
             {
                 comboBox_comport.Items.Add(comport);
@@ -115,6 +117,7 @@ namespace NovaSystem
         private void comport_disattatched()
         {
             comboBox_comport.BeginUpdate();
+            comboBox_comport.Items.Clear();
             comboBox_comport.Items.Add("None");
             foreach (string comport in SerialPort.GetPortNames())
             {
@@ -167,6 +170,31 @@ namespace NovaSystem
                     dataLogBox.Text += "해제되었습니다." + Environment.NewLine;
                 }
                 else dataLogBox.Text += "해제되어 있습니다 ." + Environment.NewLine;
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show(exception.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine(exception.Message);
+            }
+        }
+
+
+        private void button_device_clear_Click(object sender, EventArgs e)
+        {
+
+            try
+            {
+                comboBox_comport.BeginUpdate();
+                comboBox_comport.Items.Clear();
+                comboBox_comport.Items.Add("None");
+                foreach (string comport in SerialPort.GetPortNames())
+                {
+                    comboBox_comport.Items.Add(comport);
+                }
+                comboBox_comport.EndUpdate();
+                Console.WriteLine("Save Port Value : {0}", comboBox_comport_value);
+                comboBox_comport.SelectedItem = "None";
+                CheckForIllegalCrossThreadCalls = false;
             }
             catch (Exception exception)
             {

@@ -43,5 +43,6 @@ namespace NovaSystem
         {
             MessageBox.Show("업데이트 예정입니다.", "완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
     }
 }
